@@ -15,6 +15,10 @@ LABELS = ['모집 인원', '장애인 채용 인원', '모집 직종', '관련 �
 COMPANY_LABELS = ['기업명', '업종', '기업규모', '설립연도', '연매출액', '근로자수', '채용정보 이력']
 BENEFITS = ['통근버스', '기숙사', '차량유지비', '교육비 지원', '자녀 학자금 지원', '주택자금 지원', '직원대출제도', '모성보호시설']
 PHONE = re.compile(r'0\d{1,2}[-.)\s]?\d{3,4}[-.\s]?\d{4}')
+# PHONE이 놓치는 변형 표기: 구분자 앞뒤 공백·긴 대시('031 - 354 - 1365', '031–354-…'), 숫자 0 대신 O('O10-…'),
+# 끝자리 한글 숫자('010-…-공사팔팔'), 15xx·16xx·18xx 대표번호
+PHONE_VARIANT = re.compile(r'[0Oo]\d{1,2}\s*[-–—.)]\s*\d{3,4}\s*[-–—.]\s*[\d공영일이삼사오육칠팔구]{4}'
+                           r'|[Oo]1\d[-.\s]?\d{3,4}[-.\s]?\d{4}|(?<!\d)1[568]\d{2}\s*[-–]\s*\d{4}(?!\d)')
 EMAIL = re.compile(r'[\w.+-]+@[\w-]+\.[\w.]+')
 
 
@@ -26,7 +30,7 @@ def clean_text(page):
 
 
 def scrub(s):
-    return EMAIL.sub('[이메일]', PHONE.sub('[전화]', s)).strip()
+    return EMAIL.sub('[이메일]', PHONE_VARIANT.sub('[전화]', PHONE.sub('[전화]', s))).strip()
 
 
 def fields_in(text, labels):
