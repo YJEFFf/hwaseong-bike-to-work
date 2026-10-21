@@ -1,6 +1,6 @@
 """AI 분류 대상 선정·배치 작성과 규칙 기반 기준 분류.
 
-대상: 우대조건 '차량소지자'이거나, 본문·우대·복리후생에 자차·차량 소지·출퇴근·통근·대중교통 표현이 있는 공고.
+대상: 우대조건 '차량소지자'이거나, 본문·기타 우대사항·그 밖의 희망사항·기타 복리후생에 자차·차량 소지·출퇴근·통근·대중교통 표현이 있는 공고.
 AI에는 분류에 필요한 칸만 넣는다(전화·이메일은 02에서 지움, 담당자 정보는 처음부터 없음).
 규칙 기준(rule_*)은 AI 없이 정규식만으로 같은 항목을 판정해, AI가 더해 준 것이 무엇인지 비교하는 데 쓴다.
 """
@@ -8,7 +8,8 @@ import json, os, random, re
 from pathlib import Path
 
 DATA = Path(os.environ.get('JOBS_DATA', 'jobs_private'))
-CAR = re.compile(r'자차|자가용|자가\s*차량|개인\s*차량|본인\s*차량|차량\s*(?:소지|소유|보유)|차량소지|차\s*(?:있으신|있는)\s*분')
+CAR = re.compile(r'자차|자가용|자가\s*차량|자가\s*운전|개인\s*차량|본인\s*차량|차량\s*(?:소지|소유|보유)|차량소지|차\s*(?:있으신|있는)\s*분|'
+                 r'자동차\s*(?:로\s*)?(?:출근|출퇴근|통근)|차량\s*(?:을|으로|로)?\s*(?:이용|출근|출퇴근|통근)')
 COMMUTE = re.compile(r'출퇴근|출\s*퇴근|통근|대중교통|교통편|교통이?\s*불편|셔틀')
 MUST = re.compile(r'(?:자차|자가용|차량|차)\s*(?:소지|소유|보유)?\s*(?:필수|필요|필히|있어야|있으셔야|소지자만|가능자만)|(?:필수)\s*[:：]?\s*[^■◆]{0,30}(?:자차|자가용|차량\s*소지)')
 WORK_DRIVE = re.compile(r'방문|라운딩|배송|배달|영업|출장|납품|외근|현장\s*(?:이동|순회)|순회|운전\s*(?:업무|가능자 필수)')
@@ -16,7 +17,7 @@ BATCH = 40
 
 
 def text_of(r):
-    return ' '.join([r['title'], r['body'], r['pref_other'], r['benefit_other']])
+    return ' '.join([r['title'], r['body'], r['pref_other'], r['other_wish'], r['benefit_other']])
 
 
 def rule_label(r):
@@ -42,9 +43,18 @@ def ai_record(r):
         body = ' … '.join(keep)[:2500]
     return dict(id=r['id'], title=r['title'], occupation=r['occupation'], industry=r['industry'],
                 work_hours=r['work_hours'][:200], work_form=r['work_form'][:80],
-                pref_condition=r['pref_condition'], pref_other=r['pref_other'][:400],
+                pref_condition=r['pref_condition'], pref_other=r['pref_other'][:400], other_wish=r['other_wish'][:400],
                 benefit_shuttle='제공' if r['benefits'].get('통근버스') else '미제공',
                 benefit_other=r['benefit_other'][:200], body=body)
+
+
+def same_input(old, new):
+    """예전 배치에는 other_wish 칸이 없었다. 그 칸이 비어 있으면('-') 같은 입력으로 본다."""
+    if old is None:
+        return False
+    if 'other_wish' not in old and new.get('other_wish', '') in ('', '-'):
+        new = {k: v for k, v in new.items() if k != 'other_wish'}
+    return old == new
 
 
 def main():
@@ -57,13 +67,15 @@ def main():
         r.update(rule_label(r))
         if r['cand']:
             cand.append(r)
-    # 수집 도중에 분류를 시작할 수 있게, 이미 배치에 들어간 공고는 그대로 두고 새 후보만 새 배치로 덧붙인다
+    # 수집 도중에 분류를 시작할 수 있게, 이미 배치에 들어간 공고는 그대로 두고 새 후보만 새 배치로 덧붙인다.
+    # 파싱을 고쳐 AI 입력이 달라진 공고도 새 배치로 다시 넣는다(04는 뒤 배치의 입력·라벨로 덮어쓴다).
     bdir = DATA / 'batches'
     bdir.mkdir(exist_ok=True)
-    done = set()
-    for p in bdir.glob('batch_*.json'):
-        done |= {r['id'] for r in json.loads(p.read_text(encoding='utf-8'))}
-    new = sorted((r for r in cand if r['id'] not in done), key=lambda r: r['id'])
+    done = {}
+    for p in sorted(bdir.glob('batch_*.json')):
+        done |= {r['id']: r for r in json.loads(p.read_text(encoding='utf-8'))}
+    new = sorted((r for r in cand if not same_input(done.get(r['id']), ai_record(r))), key=lambda r: r['id'])
+    n_changed = sum(r['id'] in done for r in new)
     random.Random(20261022).shuffle(new)  # 배치에 구·업종이 몰리지 않게 섞는다(고정 시드)
     start = len(list(bdir.glob('batch_*.json')))
     for k, i in enumerate(range(0, len(new), BATCH)):
@@ -74,7 +86,8 @@ def main():
             f.write(json.dumps({k: r[k] for k in ('id', 'info_type', 'gu', 'occupation', 'industry', 'flag_pref_car', 'cand',
                                                   'rule_car_level', 'rule_car_purpose')} |
                                {'shuttle_struct': r['benefits'].get('통근버스', False)}, ensure_ascii=False) + '\n')
-    print(f'postings {len(recs)}, candidates {len(cand)}, new {len(new)}, batch files {len(list(bdir.glob("batch_*.json")))}')
+    print(f'postings {len(recs)}, candidates {len(cand)}, new {len(new)} (input changed {n_changed}), '
+          f'batch files {len(list(bdir.glob("batch_*.json")))}')
 
 
 if __name__ == '__main__':

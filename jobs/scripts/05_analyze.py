@@ -4,6 +4,8 @@
 지표(공고 비율):
   car_any      자차 조건(필수·우대)이 있는 공고
   car_nonwork  그중 차가 업무 자체에 필요한 경우(방문·배송·영업 등)를 뺀 공고 = 차가 출퇴근·지원 조건으로 작동할 수 있는 공고
+               (업무 = 개인 차량 업무 이동이 적힌 공고 + 직무가 근무지 밖 이동인데 회사 차량 언급이 없는 업무추정 공고)
+  민감도       업무라고 명시된 공고만 뺀 값(car_nonwork_explicit)
   car_commute  출퇴근·대중교통 불편을 이유로 적은 공고
 근무지 거리: 공고의 근무 예정지 좌표(고용24 지도 좌표) → 복원한 합집합 자전거망(측면 접속 가능한 노선), GBIS 노선 정류소.
 결과는 집계만 results/에 쓴다. 공고별 원문·좌표는 JOBS_DATA(비공개)에만 둔다.
@@ -39,10 +41,6 @@ OCC_RULES = [  # 고용24 '모집 직종' 이름 → 직종군 (위에서부터 
     ('음식·청소·경비', r'조리|주방|급식|청소|경비|미화|주차|세탁|서빙|음식|환경'),
 ]
 
-
-# 넓은 업무 기준(민감도): 공고에 근무 중 이동 직무가 적혀 있으면 차가 업무용일 수 있다고 보고 뺀다
-WORK_TRAVEL = re.compile(r'설치\s*방문|방문\s*설치|납품|출장|현장\s*(?:설치|이동|업무|방문|순회|지원|관리)|근무지\s*[:：]?\s*현장|외근|영업|라운딩|'
-                         r'방문\s*(?:요양|간호|목욕|업무|상담)|배송|순회|A/?S|거래처')
 
 
 def occ_group(name):
@@ -166,11 +164,11 @@ def main():
                  pref_car_struct=p['flag_pref_car'], car_any=lv in ('필수', '우대'),
                  car_nonwork=lv in ('필수', '우대') and pu != '업무', car_commute=lv in ('필수', '우대') and pu == '출퇴근',
                  car_must_nonwork=lv == '필수' and pu != '업무',
-                 car_nonwork_broad=lv in ('필수', '우대') and pu != '업무' and not WORK_TRAVEL.search(
-                     ' '.join([p['title'], p['body'], p['pref_other'], p['occupation']])),
+                 car_nonwork_explicit=lv in ('필수', '우대') and not (pu == '업무' and not lab.get('work_inferred')),
                  shuttle=bool(p['benefits'].get('통근버스')) or (lab is not None and lab['shuttle'] == '예'),
                  transit_barrier=lab is not None and lab['transit_barrier'] == '예',
-                 night=lab is not None and lab['night_or_shift'] == '예', lv=lv, pu=pu, d_bike=math.nan, d_stop=math.nan)
+                 night=lab is not None and lab['night_or_shift'] == '예', lv=lv, pu=pu,
+                 work_inferred=bool(lab and lab.get('work_inferred')), d_bike=math.nan, d_stop=math.nan)
         if p.get('lon'):
             x, y = tf.transform(p['lon'], p['lat'])
             pt = shapely.Point(x, y)
@@ -213,7 +211,7 @@ def main():
     pw = [r for r in prod if r['gu'] in WEST]; pe = [r for r in prod if r['gu'] in GU and r['gu'] not in WEST]
     known = [r for r in rows if r['gu'] in GU]
     mh = mantel_haenszel(known, lambda r: r['gu'] in WEST, lambda r: r['car_nonwork'], lambda r: r['occ'])
-    mh_broad = mantel_haenszel(known, lambda r: r['gu'] in WEST, lambda r: r['car_nonwork_broad'], lambda r: r['occ'])
+    mh_explicit = mantel_haenszel(known, lambda r: r['gu'] in WEST, lambda r: r['car_nonwork_explicit'], lambda r: r['occ'])
     geo = [r for r in rows if not math.isnan(r['d_bike'])]
     mh_bike = mantel_haenszel(geo, lambda r: r['d_bike'] > 300, lambda r: r['car_nonwork'], lambda r: r['occ'])
     mh_bike_stop = mantel_haenszel(geo, lambda r: r['d_bike'] > 300, lambda r: r['car_nonwork'],
@@ -232,11 +230,12 @@ def main():
                   car_any_without_struct_flag=sum(1 for r in rows if r['car_any'] and not r['pref_car_struct']),
                   struct_flag_but_work=sum(1 for r in rows if r['pref_car_struct'] and r['pu'] == '업무'),
                   mh_or_west_vs_east_by_occ=mh, mh_or_bike_over300_by_occ=mh_bike,
-                  broad_work_sensitivity=dict(
-                      car_nonwork_broad=sum(r['car_nonwork_broad'] for r in rows),
-                      west=sum(1 for r in known if r['gu'] in WEST and r['car_nonwork_broad']),
-                      east=sum(1 for r in known if r['gu'] not in WEST and r['car_nonwork_broad']),
-                      mh_or_west_vs_east_by_occ=mh_broad),
+                  work_inferred=sum(1 for r in rows if r['lv'] in ('필수', '우대') and r['work_inferred']),
+                  explicit_work_only_sensitivity=dict(
+                      car_nonwork_explicit=sum(r['car_nonwork_explicit'] for r in rows),
+                      west=sum(1 for r in known if r['gu'] in WEST and r['car_nonwork_explicit']),
+                      east=sum(1 for r in known if r['gu'] not in WEST and r['car_nonwork_explicit']),
+                      mh_or_west_vs_east_by_occ=mh_explicit),
                   mh_or_bike_over300_by_occ_and_stop500=mh_bike_stop,
                   mh_or_bike_over150_by_occ=mh150, mh_or_bike_over150_by_occ_and_stop300=mh150_stop,
                   mh_or_bike_over150_by_occ_and_region=mh150_region,

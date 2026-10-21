@@ -4,6 +4,7 @@
 - 1차·2차가 같은 항목은 그대로 쓰고, 다른 항목은 adjudication.json(원문을 다시 읽고 정한 값)을 쓴다.
 - 일치도는 단순 일치율과 Cohen's kappa를 함께 낸다.
 - 최종 판정 전수 검수(prompt_audit.md)에서 확인된 수정은 audit_fixes.json으로 덮어쓰고, 고친 건수만 ai_agreement.csv에 남긴다.
+- 마지막으로 Claude가 원문 전체를 한 건씩 읽은 판정(claude_review.jsonl, 기준 prompt_review.md)을 최종값으로 쓴다.
 """
 import json, os, re
 from collections import Counter
@@ -36,7 +37,7 @@ def evidence_ok(rec, src):
         return True
     if not ev:
         return False
-    text = norm(' '.join(str(src.get(k, '')) for k in ('title', 'body', 'pref_other', 'benefit_other', 'work_hours')))
+    text = norm(' '.join(str(src.get(k, '')) for k in ('title', 'body', 'pref_other', 'other_wish', 'benefit_other', 'work_hours')))
     for piece in [p.strip() for p in ev.split(' / ') if p.strip()]:
         if piece == '[우대조건: 차량소지자]':
             if '차량소지자' not in src.get('pref_condition', ''):
@@ -103,6 +104,34 @@ def main():
             rec['source'] += '+검수수정'
             n_fixed += 1
     print('audit fixes applied', n_fixed)
+    # Claude 전수 확인(prompt_review.md 기준으로 원문 전체를 한 건씩 읽은 판정)을 최종값으로 쓴다.
+    # 업무추정(직무가 근무지 밖 이동이고 회사 차량 언급이 없음)은 car_purpose='업무', work_inferred=True로 둔다.
+    rev_path = DATA / 'claude_review.jsonl'
+    rev = {}
+    if rev_path.exists():
+        for line in open(rev_path, encoding='utf-8'):
+            r = json.loads(line)
+            rev[r['id']] = r
+    MAP = dict(lv='car_level', pu='car_purpose', tb='transit_barrier', sh='shuttle', ns='night_or_shift')
+    n_rev, rev_fields = 0, Counter()
+    for rec in final:
+        r = rev.get(rec['id'])
+        rec['work_inferred'] = False
+        if not r:
+            continue
+        new = {MAP[k]: r[k] for k in MAP}
+        new['car_purpose'] = {'-': '해당없음', '업무추정': '업무'}.get(new['car_purpose'], new['car_purpose'])
+        changed = [f for f, v in new.items() if rec[f] != v]
+        rev_fields.update(changed)
+        rec.update(new)
+        rec['work_inferred'] = r['pu'] == '업무추정'
+        rec['evidence'] = r['ev'] if new['car_level'] != '없음' else ''
+        if changed:
+            rec['source'] += '+전수확인수정'
+            n_rev += 1
+    ev_final_bad = [rec['id'] for rec in final if not evidence_ok(rec, src[rec['id']])]
+    print('claude review applied', len(rev), 'changed postings', n_rev, dict(rev_fields),
+          'final evidence bad', len(ev_final_bad), ev_final_bad[:20])
     (DATA / 'adjudication_todo.json').write_text(json.dumps(todo, ensure_ascii=False, indent=1), encoding='utf-8')
     with open(DATA / 'labels_final.jsonl', 'w', encoding='utf-8') as f:
         for r in final:
@@ -117,6 +146,13 @@ def main():
         for k in FIELDS:
             if fixed_fields[k]:
                 f.write(f'audit_fixed_{k},{len(final)},{fixed_fields[k]},\n')
+        f.write(f'review_checked_postings,{len(final)},{len(rev)},\n')
+        f.write(f'review_changed_postings,{len(final)},{n_rev},\n')
+        for k in FIELDS:
+            if rev_fields[k]:
+                f.write(f'review_changed_{k},{len(final)},{rev_fields[k]},\n')
+        f.write(f'review_work_inferred,{len(final)},{sum(r["work_inferred"] for r in final)},\n')
+        f.write(f'final_evidence_not_in_text,{len(final)},{len(ev_final_bad)},\n')
     print('problems', len(problems), problems[:10])
     print('agreement', {k: (round(a, 3), round(b, 3)) for k, (a, b) in agree.items()}, 'evidence bad', ev_bad)
     print('to adjudicate', len(todo), 'final', len(final), Counter(r['source'] for r in final))

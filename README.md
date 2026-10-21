@@ -23,7 +23,7 @@ Python 3.12 이상, `pip install -r requirements.txt`.
 2. OSM 노드 번호 복원: `python -X utf8 commute/scripts/00_restore_osm_nodes.py` (2026-09-14 추출본은 도로끼리 공유하는 노드 번호가 빠져 있어 교량·터널이 끊긴 것으로 계산됩니다. 추출 시점의 OSM 공개 이력에서 되살립니다.)
 3. 공장 좌표: 화성시 공장등록 현황(2024-02)을 받아 `FACTORY_DIR`에 두고 `commute/scripts/01_geocode_factories.py`(브이월드 키 필요)를 실행합니다.
 4. `commute/scripts/` 03→02→04→05→07→06 순서로 실행합니다. 자세한 내용은 `commute/README.md`.
-5. 채용공고: `jobs/README.md`의 순서(수집 → 파싱 → AI 분류 → 합치기 → 집계 → 그림)를 따릅니다. AI 분류 지시문은 `jobs/prompt_classify.md`, 재판정·검수 규칙은 `prompt_adjudicate.md`, `prompt_audit.md`입니다.
+5. 채용공고: `jobs/README.md`의 순서(수집 → 파싱 → AI 분류 → 합치기 → 집계 → 그림)를 따릅니다. AI 분류 지시문은 `jobs/prompt_classify.md`, 재판정·검수·전수 확인 기준은 `prompt_adjudicate.md`, `prompt_audit.md`, `prompt_review.md`입니다.
 
 ## 공개하지 않는 것
 
@@ -35,4 +35,4 @@ Python 3.12 이상, `pip install -r requirements.txt`.
 
 © OpenStreetMap contributors (ODbL), GHSL GHS-POP (CC BY 4.0), 화성시 생활공간 웹포털, 화성시 공장등록 현황, 행정안전부 주민등록 인구(공공데이터포털), 통계청 KOSIS, 행정동 경계(vuski/admdongkor), 고용24(한국고용정보원), 경기버스정보(GBIS). 자세한 조건은 `DATA_LICENSES.md`.
 
-AI 도구: Claude Code(Anthropic; Claude Opus·Sonnet), Codex(OpenAI). AI가 만든 분류는 두 모델 비교, 근거 문장 원문 대조, 전수 검수로 점검했습니다.
+AI 도구: Claude Code(Anthropic; Claude Opus·Sonnet), Codex(OpenAI). 채용공고 분류는 두 모델이 따로 분류해 비교했고, 근거 문장을 원문과 대조했으며, Claude가 후보 852건의 원문 전체를 한 건씩 다시 읽어 확정했습니다(`jobs/prompt_review.md`, `jobs/README.md`의 검증 기록). 판정은 AI가 했고 사람이 전수 확인한 것은 아닙니다.

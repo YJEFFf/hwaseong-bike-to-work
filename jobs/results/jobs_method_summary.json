@@ -1,53 +1,54 @@
 {
  "postings": 3475,
  "with_coords": 2143,
- "candidates": 775,
- "pref_car_struct": 443,
- "car_any": 617,
- "car_nonwork": 602,
- "car_commute": 157,
- "car_must_nonwork": 65,
- "car_any_without_struct_flag": 174,
- "struct_flag_but_work": 7,
- "mh_or_west_vs_east_by_occ": "2.20 (1.61-3.01)",
- "mh_or_bike_over300_by_occ": "1.30 (0.97-1.75)",
- "broad_work_sensitivity": {
-  "car_nonwork_broad": 476,
-  "west": 440,
-  "east": 36,
-  "mh_or_west_vs_east_by_occ": "2.40 (1.68-3.43)"
+ "candidates": 852,
+ "pref_car_struct": 458,
+ "car_any": 673,
+ "car_nonwork": 605,
+ "car_commute": 194,
+ "car_must_nonwork": 62,
+ "car_any_without_struct_flag": 215,
+ "struct_flag_but_work": 51,
+ "mh_or_west_vs_east_by_occ": "2.61 (1.88-3.62)",
+ "mh_or_bike_over300_by_occ": "1.66 (1.21-2.27)",
+ "work_inferred": 66,
+ "explicit_work_only_sensitivity": {
+  "car_nonwork_explicit": 671,
+  "west": 614,
+  "east": 57,
+  "mh_or_west_vs_east_by_occ": "2.20 (1.64-2.96)"
  },
- "mh_or_bike_over300_by_occ_and_stop500": "1.28 (0.95-1.73)",
- "mh_or_bike_over150_by_occ": "1.62 (1.13-2.31)",
- "mh_or_bike_over150_by_occ_and_stop300": "1.46 (1.01-2.10)",
- "mh_or_bike_over150_by_occ_and_region": "1.24 (0.82-1.88)",
+ "mh_or_bike_over300_by_occ_and_stop500": "1.60 (1.17-2.19)",
+ "mh_or_bike_over150_by_occ": "2.02 (1.38-2.96)",
+ "mh_or_bike_over150_by_occ_and_stop300": "1.77 (1.20-2.62)",
+ "mh_or_bike_over150_by_occ_and_region": "1.52 (0.98-2.36)",
  "bike_within150": {
   "n": 435,
-  "car_nonwork": 40
+  "car_nonwork": 33
  },
  "bike_over150": {
   "n": 1708,
-  "car_nonwork": 306
+  "car_nonwork": 313
  },
  "production_west": {
   "n": 1369,
-  "car_nonwork": 255
+  "car_nonwork": 269
  },
  "production_east": {
   "n": 137,
-  "car_nonwork": 14
+  "car_nonwork": 15
  },
  "west": {
   "n": 2833,
-  "car_nonwork": 552
+  "car_nonwork": 562
  },
  "east": {
   "n": 637,
-  "car_nonwork": 50
+  "car_nonwork": 43
  },
- "rule_vs_ai_purpose_agreement": 0.8284,
- "rule_vs_ai_level_agreement": 0.9148,
- "rule_commute": 117,
- "rule_work": 93,
- "ai_work": 15
+ "rule_vs_ai_purpose_agreement": 0.8181,
+ "rule_vs_ai_level_agreement": 0.9085,
+ "rule_commute": 154,
+ "rule_work": 102,
+ "ai_work": 68
 }
