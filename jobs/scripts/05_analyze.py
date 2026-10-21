@@ -267,11 +267,17 @@ def main():
         w = csv.writer(f)
         w.writerow(['id', 'title', 'occupation', 'pref_condition', 'text', 'ai_car_level', 'ai_car_purpose',
                     'ai_evidence', 'human_car_level(필수/우대/없음)', 'human_car_purpose(출퇴근/업무/불명/해당없음)', 'memo'])
+        by_id = {q['id']: q for q in posts}
         for i in pick:
-            s, l = src[i], labels.get(i, {})
-            w.writerow([i, s['title'], s['occupation'], s['pref_condition'],
-                        ' | '.join([s['body'], s['pref_other'], s['benefit_other']])[:3000],
-                        l.get('car_level', ''), l.get('car_purpose', ''), l.get('evidence', ''), '', '', ''])
+            q, l = by_id[i], labels.get(i, {})
+            parts = [('본문', q['body']), ('기타 우대사항', q['pref_other']), ('그 밖의 희망사항', q.get('other_wish', '')),
+                     ('기타 복리후생', q['benefit_other']), ('근무시간', q['work_hours'])]
+            text = ' | '.join(f'[{k}] {v}' for k, v in parts if v and v.strip() not in ('', '-'))
+            pu = l.get('car_purpose', '')
+            if pu == '업무' and l.get('work_inferred'):
+                pu = '업무(추정)'
+            w.writerow([i, q['title'], q['occupation'], q['pref_condition'], text[:4000],
+                        l.get('car_level', ''), pu, l.get('evidence', ''), '', '', ''])
     print(json.dumps(method, ensure_ascii=False))
     for b in by_gu:
         print(b['group'], b['n'], b['pref_car_struct_share'], b['car_any_share'], b['car_nonwork_share'], b['car_commute_share'],
