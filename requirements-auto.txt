@@ -1,0 +1,7 @@
+# Versions used for the 2026-09-21 automatic scenario execution.
+numpy==1.26.4
+pandas==2.3.3
+scipy==1.13.1
+shapely==2.1.2
+pyproj==3.8.0
+pytest==9.0.3

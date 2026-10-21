@@ -1,0 +1,146 @@
+{
+  "lines": 281,
+  "polys": 5978,
+  "line_km": 318.982,
+  "lines_hash": "c404497902ca32142615de499e36d97c52937ac803a5d5f80f2bfc5b6bc48e54",
+  "polys_hash": "d43409d29333e8cb2dfbe0398e183165e5514539ae3d1b3e890252fae8bf39fd",
+  "sources": {
+    "lines": "화성_자전거노선_5186.geojson",
+    "polys": "화성_자전거도로면_5186.geojson"
+  },
+  "raw_inputs_schema_note": "각 항목은 path, sha256, bytes, source, url, retrieved, licence, query 를 반드시 갖는다 (Overpass가 아니면 query=null). retrieved 기본값은 2026-09-15이며, 파일 자체에 다른 기준일(OSM osm3s.timestamp_osm_base 등)이 있으면 그 값을 쓴다. sha256/bytes는 제출레포 메인 체크아웃 data/raw/ 실물 기준(2026-09-15 계산) — data/raw/는 git에 커밋하지 않으므로 이 매니페스트가 유일한 무결성 기록이다.",
+  "raw_inputs": [
+    {
+      "path": "data/raw/화성_자전거노선_5186.geojson",
+      "sha256": "2f27f04255cc93cd5c5732969af4a61a7eac0d99da6f53c7422a3270dae619ae",
+      "bytes": 588740,
+      "source": "화성시 생활공간 웹포털 — 자전거도로 노선(RD.RDL_BYST_LS)",
+      "url": "https://air.hscity.go.kr/hsgisMap/gs1/geoserver/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=hsgisDB:RD.RDL_BYST_LS&maxFeatures=10000&outputFormat=application/json&srsName=EPSG:5186",
+      "retrieved": "2026-09-15",
+      "licence": "화성시 GIS — 재배포 허가 확인 전(보류); data/raw/에는 두되 git에는 커밋하지 않는다",
+      "query": null,
+      "note": "scripts/00_fetch.py 가 이 URL로 재다운로드한다. WFS hits=281 확인됨(자료확보표.md)"
+    },
+    {
+      "path": "data/raw/화성_자전거도로면_5186.geojson",
+      "sha256": "2ed2f3b903f81badefb16f0021438914ae75c6ecb2584d737b300e6ffef4e574",
+      "bytes": 6097565,
+      "source": "화성시 생활공간 웹포털 — 자전거도로 면형(RD.RDL_BYCP_AS)",
+      "url": "https://air.hscity.go.kr/hsgisMap/gs1/geoserver/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=hsgisDB:RD.RDL_BYCP_AS&maxFeatures=10000&outputFormat=application/json&srsName=EPSG:5186",
+      "retrieved": "2026-09-15",
+      "licence": "화성시 GIS — 재배포 허가 확인 전(보류); data/raw/에는 두되 git에는 커밋하지 않는다",
+      "query": null,
+      "note": "scripts/00_fetch.py 가 이 URL로 재다운로드한다. WFS hits=5978 확인됨(자료확보표.md)"
+    },
+    {
+      "path": "data/raw/osm_hwaseong_bike_20260914.json",
+      "sha256": "665eb4e706221ee7f4e466088cb9f52e5e112f5299260aebfc4afadd1f7d4442",
+      "bytes": 1234258,
+      "source": "OpenStreetMap (Overpass API) — 화성시(area 3602409173) 자전거 시설",
+      "url": "https://overpass-api.de/api/interpreter",
+      "retrieved": "2026-09-14",
+      "licence": "OpenStreetMap contributors, Open Database License (ODbL) 1.0",
+      "query": "[out:json][timeout:240];area(3602409173)->.a;(way[\"highway\"=\"cycleway\"](area.a);way[\"cycleway\"~\"lane|track|shared_lane|opposite_lane|separate\"](area.a);way[\"cycleway:both\"~\".\"](area.a);way[\"cycleway:left\"~\".\"](area.a);way[\"cycleway:right\"~\".\"](area.a);way[\"bicycle\"=\"designated\"](area.a););out tags geom;",
+      "note": "쿼리 출처: Claude_작업기록/scripts/osm_hwaseong_stats.py (--fetch로 재현 가능). osm3s.timestamp_osm_base=2026-09-14T15:24:00Z"
+    },
+    {
+      "path": "data/raw/osm_roads/roads.json",
+      "sha256": "8c71ac35d283e39d294046631c4aed1770dc9c29cebe65488cd288197782f79b",
+      "bytes": 17278011,
+      "source": "OpenStreetMap (Overpass API) — 화성시(area 3602409173) 전체 도로망(highway=*), 저위계망 산정용",
+      "url": "https://overpass-api.de/api/interpreter",
+      "retrieved": "2026-05-31",
+      "licence": "OpenStreetMap contributors, Open Database License (ODbL) 1.0",
+      "query": "[out:json][timeout:300];area(3602409173)->.a;way[\"highway\"](area.a);out geom;",
+      "note": "reconstructed from download log — 원본 실행 스크립트는 보존되지 않아 다운로드 기록으로부터 쿼리를 재구성함. osm3s.timestamp_osm_base=2026-05-31T22:37:44Z"
+    },
+    {
+      "path": "data/raw/osm_poi/stops.json",
+      "sha256": "28291fb1fd4843d013b652c4c34e928032060e1bc65737d8d1165e696e50ba67",
+      "bytes": 791630,
+      "source": "OpenStreetMap (Overpass API) — 화성시(area 3602409173) 버스정류장·역 POI",
+      "url": "https://overpass-api.de/api/interpreter",
+      "retrieved": "2026-07-24",
+      "licence": "OpenStreetMap contributors, Open Database License (ODbL) 1.0",
+      "query": "[out:json][timeout:300];area(3602409173)->.a;(node[\"highway\"=\"bus_stop\"](area.a);node[\"railway\"=\"station\"](area.a);node[\"public_transport\"=\"station\"](area.a););out body;",
+      "note": "reconstructed from download log — 원본 실행 스크립트는 보존되지 않아 다운로드 기록으로부터 쿼리를 재구성함. osm3s.timestamp_osm_base=2026-07-24T11:04:51Z"
+    },
+    {
+      "path": "data/raw/admin/hwaseong_hjd_20260701.geojson",
+      "sha256": "3e1bbf61692db9b7a5d58c5421a415664c40f0efc54f157f4e2ffae004b5259c",
+      "bytes": 251912,
+      "source": "vuski/admdongkor — 전국 행정동 경계 ver20260701 중 화성시 부분집합(sggnm에 '화성시' 포함하는 피처만)",
+      "url": "https://raw.githubusercontent.com/vuski/admdongkor/master/ver20260701/HangJeongDong_ver20260701.geojson",
+      "retrieved": "2026-09-15",
+      "licence": "명시 안 됨(저장소에 라이선스 파일 없음) — 사람 확인 필요로 플래그",
+      "query": null,
+      "note": "전국 GeoJSON을 그대로 재배포하지 않고 화성시만 추출한 파생본. I7 참고: 재배포 여부는 admdongkor 라이선스 확정 전까지 보류 권고"
+    },
+    {
+      "path": "data/raw/ghsl/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R5_C29.tif",
+      "sha256": "6cc2d86d626d8015d321eec58450a03bf3afeca10d9741696693543bc8a01b57",
+      "bytes": 101435502,
+      "source": "European Commission Joint Research Centre (JRC) — Global Human Settlement Layer, GHS-POP E2025 GLOBE R2023A 100m V1-0, tile R5_C29",
+      "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2025_GLOBE_R2023A_54009_100/V1-0/tiles/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R5_C29.zip",
+      "retrieved": "2026-09-15",
+      "licence": "CC BY 4.0 (Schiavina et al. 2023, GHS-POP R2023A)",
+      "query": null,
+      "note": "실제 다운로드 일자 기록 없음 — 기본값(2026-09-15) 사용, 실제와 다를 수 있음. JRC FTP는 ZIP으로 배포하므로 받은 뒤 압축 해제가 필요하다"
+    },
+    {
+      "path": "data/raw/ghsl/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R5_C30.tif",
+      "sha256": "f1d6a32b5732f6acd087ab2cb3b732238afbeca4e527f78facfca2bcfeff1a1d",
+      "bytes": 36580389,
+      "source": "European Commission Joint Research Centre (JRC) — Global Human Settlement Layer, GHS-POP E2025 GLOBE R2023A 100m V1-0, tile R5_C30",
+      "url": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2025_GLOBE_R2023A_54009_100/V1-0/tiles/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R5_C30.zip",
+      "retrieved": "2026-09-15",
+      "licence": "CC BY 4.0 (Schiavina et al. 2023, GHS-POP R2023A)",
+      "query": null,
+      "note": "실제 다운로드 일자 기록 없음 — 기본값(2026-09-15) 사용, 실제와 다를 수 있음. JRC FTP는 ZIP으로 배포하므로 받은 뒤 압축 해제가 필요하다"
+    },
+    {
+      "path": "data/raw/population/pop_raw.bin",
+      "sha256": "0cbb5983a9efad7951548a89ae11c295ed08e95f8d222d15bc5e5e46d5701e24",
+      "bytes": 2568139,
+      "source": "행정안전부 — 지역별(행정동) 성별 연령별 주민등록 인구수, 기준 2026-08-31 (cp949 CSV)",
+      "url": "https://www.data.go.kr/data/15097972/fileData.do",
+      "retrieved": "2026-09-14",
+      "licence": "공공데이터(공공누리 유형 미확인 — 사람 확인 필요로 플래그)",
+      "query": null,
+      "note": "HTTP 응답 Content-Disposition 파일명: '지역별(행정동) 성별 연령별 주민등록 인구수_20260831.csv'. 응답 Date 헤더=2026-09-14 17:56:30 GMT를 retrieved로 사용. API 문서: https://infuser.odcloud.kr/oas/docs?namespace=15097972/v1"
+    },
+    {
+      "path": "data/raw/schools/page_1.json",
+      "sha256": "dd526bfb2f989a72d5c55e0fba69f522ea2ec214d1820c8a9b8e9815d536cfcf",
+      "bytes": 6163879,
+      "source": "공공데이터포털 표준데이터 — 전국초중등학교위치표준데이터 (dataset 15021148), 1/2 페이지(1-10000행)",
+      "url": "https://api.data.go.kr/openapi/tn_pubr_public_elesch_mskul_lc_api",
+      "retrieved": "2026-09-15",
+      "licence": "공공데이터(표준데이터, 공공누리 유형 미확인 — 사람 확인 필요로 플래그)",
+      "query": null,
+      "note": "audit.json retrieved_at=2026-09-15T02:56:00.872779+09:00, expected/downloaded=12011건, 화성시 192건(초 110/중 49/고 33). 포털 안내: https://www.data.go.kr/data/15021148/standard.do"
+    },
+    {
+      "path": "data/raw/schools/page_2.json",
+      "sha256": "29cf60cc39d49bd1b47de1dc8abfddf7b758df8b2685f6bf44f3658f8420a4a7",
+      "bytes": 1240509,
+      "source": "공공데이터포털 표준데이터 — 전국초중등학교위치표준데이터 (dataset 15021148), 2/2 페이지(10001-12011행)",
+      "url": "https://api.data.go.kr/openapi/tn_pubr_public_elesch_mskul_lc_api",
+      "retrieved": "2026-09-15",
+      "licence": "공공데이터(표준데이터, 공공누리 유형 미확인 — 사람 확인 필요로 플래그)",
+      "query": null,
+      "note": "audit.json retrieved_at=2026-09-15T02:56:00.872779+09:00. 포털 안내: https://www.data.go.kr/data/15021148/standard.do"
+    },
+    {
+      "path": "data/raw/yejun08_candidates.csv",
+      "sha256": "8e6ac7642e44419cc2c00981ea3a260cf501d9d3b1a42bcc813d66fad3f7091c",
+      "bytes": 88905,
+      "source": "팀원 허예준 — 화성시 자전거망 단절 후보 지점 목록. Codex_작업기록/01_최종결론_심층브레인스토밍/08_화성데이터확보와단절검증/analyze_network.py 가 화성시 WFS 자전거 노선(RD.RDL_BYST_LS)·도로면(RD.RDL_BYCP_AS)으로부터 기하학적으로 산출한 파생물(원 소스는 위 두 official 항목과 동일)",
+      "url": "작업 레포 내부 산출물 경로: Codex_작업기록/01_최종결론_심층브레인스토밍/08_화성데이터확보와단절검증/분석결과/지도상_분리성분_연결후보.csv (외부 API 아님)",
+      "retrieved": "2026-09-15",
+      "licence": "팀 내부 산출물. 원 소스(화성시 GIS WFS)의 재배포 제약을 그대로 물려받는다",
+      "query": null,
+      "note": "제출레포 data/raw/yejun08_candidates.csv와 바이트 단위로 동일함을 diff로 확인(2026-09-15)"
+    }
+  ]
+}

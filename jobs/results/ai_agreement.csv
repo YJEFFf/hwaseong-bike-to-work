@@ -1,0 +1,13 @@
+﻿field,n,agreement,kappa
+car_level,775,0.9742,0.9478
+car_purpose,775,0.9755,0.9578
+transit_barrier,775,0.9935,0.9173
+shuttle,775,0.9987,0.9948
+night_or_shift,775,0.9935,0.9681
+occupation_group,775,0.9277,0.9003
+evidence_not_in_text_A,775,0,
+evidence_not_in_text_B,775,0,
+audit_fixed_postings,775,24,
+audit_fixed_car_level,775,18,
+audit_fixed_car_purpose,775,3,
+audit_fixed_transit_barrier,775,3,
