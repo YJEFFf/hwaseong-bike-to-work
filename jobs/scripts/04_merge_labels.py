@@ -5,6 +5,7 @@
 - 일치도는 단순 일치율과 Cohen's kappa를 함께 낸다.
 - 최종 판정 전수 검수(prompt_audit.md)에서 확인된 수정은 audit_fixes.json으로 덮어쓰고, 고친 건수만 ai_agreement.csv에 남긴다.
 - 마지막으로 Claude가 원문 전체를 한 건씩 읽은 판정(claude_review.jsonl, 기준 prompt_review.md)을 최종값으로 쓴다.
+  직무에 운전·근무지 밖 이동이 있는 공고는 job_travel=True와 원문 근거 문구(job_travel_evidence)를 붙인다.
 """
 import json, os, re
 from collections import Counter
@@ -105,7 +106,8 @@ def main():
             n_fixed += 1
     print('audit fixes applied', n_fixed)
     # Claude 전수 확인(prompt_review.md 기준으로 원문 전체를 한 건씩 읽은 판정)을 최종값으로 쓴다.
-    # 업무추정(직무가 근무지 밖 이동이고 회사 차량 언급이 없음)은 car_purpose='업무', work_inferred=True로 둔다.
+    # job_travel: 직무에 차 운전(배송·납품·운송·수행·송영)이나 근무지 밖 이동(방문·외근 영업·출장·현장 설치)이 있는 공고.
+    # 회사 차량을 쓰든 개인 차량을 쓰든, 자차 조건 이유가 무엇이든 05에서 본 지표에서 뺀다. 근거 문구(wt_ev)는 원문 대조한다.
     rev_path = DATA / 'claude_review.jsonl'
     rev = {}
     if rev_path.exists():
@@ -116,22 +118,26 @@ def main():
     n_rev, rev_fields = 0, Counter()
     for rec in final:
         r = rev.get(rec['id'])
-        rec['work_inferred'] = False
+        rec['job_travel'], rec['job_travel_evidence'] = False, ''
         if not r:
             continue
         new = {MAP[k]: r[k] for k in MAP}
-        new['car_purpose'] = {'-': '해당없음', '업무추정': '업무'}.get(new['car_purpose'], new['car_purpose'])
+        new['car_purpose'] = {'-': '해당없음'}.get(new['car_purpose'], new['car_purpose'])
         changed = [f for f, v in new.items() if rec[f] != v]
         rev_fields.update(changed)
         rec.update(new)
-        rec['work_inferred'] = r['pu'] == '업무추정'
         rec['evidence'] = r['ev'] if new['car_level'] != '없음' else ''
+        if new['car_level'] != '없음' and r['wt'] == '예':
+            rec['job_travel'], rec['job_travel_evidence'] = True, r.get('wt_ev', '')
         if changed:
             rec['source'] += '+전수확인수정'
             n_rev += 1
     ev_final_bad = [rec['id'] for rec in final if not evidence_ok(rec, src[rec['id']])]
+    jt_bad = [rec['id'] for rec in final if rec['job_travel'] and not evidence_ok(
+        dict(car_level='필수', evidence=rec['job_travel_evidence']), src[rec['id']])]
     print('claude review applied', len(rev), 'changed postings', n_rev, dict(rev_fields),
-          'final evidence bad', len(ev_final_bad), ev_final_bad[:20])
+          'final evidence bad', len(ev_final_bad), ev_final_bad[:20],
+          'job travel', sum(r['job_travel'] for r in final), 'job travel evidence bad', jt_bad)
     (DATA / 'adjudication_todo.json').write_text(json.dumps(todo, ensure_ascii=False, indent=1), encoding='utf-8')
     with open(DATA / 'labels_final.jsonl', 'w', encoding='utf-8') as f:
         for r in final:
@@ -151,8 +157,9 @@ def main():
         for k in FIELDS:
             if rev_fields[k]:
                 f.write(f'review_changed_{k},{len(final)},{rev_fields[k]},\n')
-        f.write(f'review_work_inferred,{len(final)},{sum(r["work_inferred"] for r in final)},\n')
+        f.write(f'review_job_travel,{len(final)},{sum(r["job_travel"] for r in final)},\n')
         f.write(f'final_evidence_not_in_text,{len(final)},{len(ev_final_bad)},\n')
+        f.write(f'job_travel_evidence_not_in_text,{len(final)},{len(jt_bad)},\n')
     print('problems', len(problems), problems[:10])
     print('agreement', {k: (round(a, 3), round(b, 3)) for k, (a, b) in agree.items()}, 'evidence bad', ev_bad)
     print('to adjudicate', len(todo), 'final', len(final), Counter(r['source'] for r in final))

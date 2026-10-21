@@ -3,10 +3,10 @@
 분석 대상: 고용24에 직접 등록된(VALIDATION) 화성시 게시 공고. 민간 포털 연계 공고는 본문·우대조건이 없어 제외한다.
 지표(공고 비율):
   car_any      자차 조건(필수·우대)이 있는 공고
-  car_nonwork  그중 차가 업무 자체에 필요한 경우(방문·배송·영업 등)를 뺀 공고 = 차가 출퇴근·지원 조건으로 작동할 수 있는 공고
-               (업무 = 개인 차량 업무 이동이 적힌 공고 + 직무가 근무지 밖 이동인데 회사 차량 언급이 없는 업무추정 공고)
-  민감도       업무라고 명시된 공고만 뺀 값(car_nonwork_explicit)
-  car_commute  출퇴근·대중교통 불편을 이유로 적은 공고
+  car_nonwork  그중 직무에 차 운전이나 근무지 밖 이동이 있는 공고(job_travel: 배송·납품·운송·수행기사·송영, 방문·외근 영업·
+               출장·현장 설치)를 뺀 공고 = 차가 출퇴근·지원 조건으로 작동할 수 있는 공고. 회사 차량을 쓰는 운전 직무도,
+               자차 조건 이유로 출퇴근을 적은 이동 직무도 뺀다.
+  car_commute  car_nonwork 가운데 출퇴근·대중교통 불편을 이유로 적은 공고(민감도: 이것만 세어도 서부·동부 차이가 남는지)
 근무지 거리: 공고의 근무 예정지 좌표(고용24 지도 좌표) → 복원한 합집합 자전거망(측면 접속 가능한 노선), GBIS 노선 정류소.
 결과는 집계만 results/에 쓴다. 공고별 원문·좌표는 JOBS_DATA(비공개)에만 둔다.
 """
@@ -160,15 +160,16 @@ def main():
             raise SystemExit(f'후보 공고 라벨 없음: {p["id"]}')
         lv = lab['car_level'] if lab else '없음'
         pu = lab['car_purpose'] if lab else '해당없음'
+        jt = bool(lab and lab.get('job_travel'))
+        nonwork = lv in ('필수', '우대') and not jt and pu != '업무'
         r = dict(id=p['id'], gu=p['gu'] if p['gu'] in GU else '구 미상', occ=occ_group(p['occupation']),
                  pref_car_struct=p['flag_pref_car'], car_any=lv in ('필수', '우대'),
-                 car_nonwork=lv in ('필수', '우대') and pu != '업무', car_commute=lv in ('필수', '우대') and pu == '출퇴근',
-                 car_must_nonwork=lv == '필수' and pu != '업무',
-                 car_nonwork_explicit=lv in ('필수', '우대') and not (pu == '업무' and not lab.get('work_inferred')),
+                 car_nonwork=nonwork, car_commute=nonwork and pu == '출퇴근',
+                 car_must_nonwork=nonwork and lv == '필수',
                  shuttle=bool(p['benefits'].get('통근버스')) or (lab is not None and lab['shuttle'] == '예'),
                  transit_barrier=lab is not None and lab['transit_barrier'] == '예',
                  night=lab is not None and lab['night_or_shift'] == '예', lv=lv, pu=pu,
-                 work_inferred=bool(lab and lab.get('work_inferred')), d_bike=math.nan, d_stop=math.nan)
+                 job_travel=jt, d_bike=math.nan, d_stop=math.nan)
         if p.get('lon'):
             x, y = tf.transform(p['lon'], p['lat'])
             pt = shapely.Point(x, y)
@@ -211,7 +212,7 @@ def main():
     pw = [r for r in prod if r['gu'] in WEST]; pe = [r for r in prod if r['gu'] in GU and r['gu'] not in WEST]
     known = [r for r in rows if r['gu'] in GU]
     mh = mantel_haenszel(known, lambda r: r['gu'] in WEST, lambda r: r['car_nonwork'], lambda r: r['occ'])
-    mh_explicit = mantel_haenszel(known, lambda r: r['gu'] in WEST, lambda r: r['car_nonwork_explicit'], lambda r: r['occ'])
+    mh_commute = mantel_haenszel(known, lambda r: r['gu'] in WEST, lambda r: r['car_commute'], lambda r: r['occ'])
     geo = [r for r in rows if not math.isnan(r['d_bike'])]
     mh_bike = mantel_haenszel(geo, lambda r: r['d_bike'] > 300, lambda r: r['car_nonwork'], lambda r: r['occ'])
     mh_bike_stop = mantel_haenszel(geo, lambda r: r['d_bike'] > 300, lambda r: r['car_nonwork'],
@@ -228,14 +229,17 @@ def main():
                   car_nonwork=sum(r['car_nonwork'] for r in rows), car_commute=sum(r['car_commute'] for r in rows),
                   car_must_nonwork=sum(r['car_must_nonwork'] for r in rows),
                   car_any_without_struct_flag=sum(1 for r in rows if r['car_any'] and not r['pref_car_struct']),
-                  struct_flag_but_work=sum(1 for r in rows if r['pref_car_struct'] and r['pu'] == '업무'),
+                  struct_flag_but_job_travel=sum(1 for r in rows if r['pref_car_struct'] and r['car_any'] and r['job_travel']),
                   mh_or_west_vs_east_by_occ=mh, mh_or_bike_over300_by_occ=mh_bike,
-                  work_inferred=sum(1 for r in rows if r['lv'] in ('필수', '우대') and r['work_inferred']),
-                  explicit_work_only_sensitivity=dict(
-                      car_nonwork_explicit=sum(r['car_nonwork_explicit'] for r in rows),
-                      west=sum(1 for r in known if r['gu'] in WEST and r['car_nonwork_explicit']),
-                      east=sum(1 for r in known if r['gu'] not in WEST and r['car_nonwork_explicit']),
-                      mh_or_west_vs_east_by_occ=mh_explicit),
+                  job_travel=sum(1 for r in rows if r['car_any'] and r['job_travel']),
+                  job_travel_stated_commute=sum(1 for r in rows if r['car_any'] and r['job_travel'] and r['pu'] == '출퇴근'),
+                  commute_only_sensitivity=dict(
+                      west=sum(1 for r in known if r['gu'] in WEST and r['car_commute']),
+                      east=sum(1 for r in known if r['gu'] not in WEST and r['car_commute']),
+                      mh_or_west_vs_east_by_occ=mh_commute),
+                  transit_barrier_nonwork=dict(
+                      total=sum(1 for r in rows if r['car_nonwork'] and r['transit_barrier']),
+                      west=sum(1 for r in known if r['gu'] in WEST and r['car_nonwork'] and r['transit_barrier'])),
                   mh_or_bike_over300_by_occ_and_stop500=mh_bike_stop,
                   mh_or_bike_over150_by_occ=mh150, mh_or_bike_over150_by_occ_and_stop300=mh150_stop,
                   mh_or_bike_over150_by_occ_and_region=mh150_region,
@@ -266,18 +270,18 @@ def main():
     with open(DATA / 'verify_sheet_100.csv', 'w', newline='', encoding='utf-8-sig') as f:
         w = csv.writer(f)
         w.writerow(['id', 'title', 'occupation', 'pref_condition', 'text', 'ai_car_level', 'ai_car_purpose',
-                    'ai_evidence', 'human_car_level(필수/우대/없음)', 'human_car_purpose(출퇴근/업무/불명/해당없음)', 'memo'])
+                    'ai_evidence', 'ai_job_travel', 'ai_job_travel_evidence', 'human_car_level(필수/우대/없음)',
+                    'human_car_purpose(출퇴근/업무/불명/해당없음)', 'human_job_travel(예/아니오)', 'memo'])
         by_id = {q['id']: q for q in posts}
         for i in pick:
             q, l = by_id[i], labels.get(i, {})
             parts = [('본문', q['body']), ('기타 우대사항', q['pref_other']), ('그 밖의 희망사항', q.get('other_wish', '')),
                      ('기타 복리후생', q['benefit_other']), ('근무시간', q['work_hours'])]
             text = ' | '.join(f'[{k}] {v}' for k, v in parts if v and v.strip() not in ('', '-'))
-            pu = l.get('car_purpose', '')
-            if pu == '업무' and l.get('work_inferred'):
-                pu = '업무(추정)'
+            jt = '' if l.get('car_level', '없음') == '없음' else ('예' if l.get('job_travel') else '아니오')
             w.writerow([i, q['title'], q['occupation'], q['pref_condition'], text[:4000],
-                        l.get('car_level', ''), pu, l.get('evidence', ''), '', '', ''])
+                        l.get('car_level', ''), l.get('car_purpose', ''), l.get('evidence', ''),
+                        jt, l.get('job_travel_evidence', ''), '', '', '', ''])
     print(json.dumps(method, ensure_ascii=False))
     for b in by_gu:
         print(b['group'], b['n'], b['pref_car_struct_share'], b['car_any_share'], b['car_nonwork_share'], b['car_commute_share'],

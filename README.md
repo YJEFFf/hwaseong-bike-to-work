@@ -3,7 +3,7 @@
 한겨레 × 숲과나눔 「AI와 함께하는 교통문제 해결을 위한 데이터 분석 공모전」(2026) 팀 북적북적의 분석 코드와 집계 결과입니다.
 
 - `commute/`: 공식 GIS 자전거도로와 OpenStreetMap 자전거 경로를 합친 망에서 끊긴 지점을 찾고, 근로 연령 주민이 자전거 15분 안에 공장 일자리에 닿는 몫과 연결 우선순위·조건부 탄소 감축량을 계산합니다.
-- `jobs/`: 고용24 화성시 채용공고 원문을 AI로 읽어 자차 조건(필수·우대·없음)과 이유(출퇴근·업무·불명)를 분류하고, 근무지에서 자전거망·버스 정류소까지 거리와 겹쳐 봅니다.
+- `jobs/`: 고용24 화성시 채용공고 원문을 AI로 읽어 자차 조건(필수·우대·없음)과 이유(출퇴근·업무·불명)를 분류하고, 배송·영업·출장처럼 차가 직무에 들어가는 공고는 따로 표시해 빼고, 근무지에서 자전거망·버스 정류소까지 거리와 겹쳐 봅니다.
 - `analysis/`, `scripts/`: 두 분석이 공통으로 쓰는 망 구성·경로 계산 코드입니다.
 
 ## 주요 결과 (보고서 기준)
@@ -13,6 +13,7 @@
 | 자전거망 연결 덩어리 / 20m 안 끊긴 지점 / 50m 안 | 208 / 212 / 324 | `commute/results/gaps_summary.csv` |
 | 직선 15분 안 공장 일자리 중 자전거망으로 닿는 몫 | 7.3% (최대 집계점 제외 11.0%) | `commute/results/commute_access.csv`, `sensitivity_round2.csv` |
 | 끊긴 틈 + 공장 진입 구간 연결 시 | 21.8% (최대 집계점 제외 17.7%) | `commute/results/sensitivity_round2.csv` |
+| 차가 직무에 들어가는 공고를 뺀 자차 필수·우대 공고 비율 | 16.3% (서부 18.7%, 동부 6.0%) | `jobs/results/jobs_by_west_east.csv`, `jobs_method_summary.json` |
 | 채용공고 AI 분류 결과 | `jobs/results/` | `jobs_by_gu.csv`, `jobs_method_summary.json`, `ai_agreement.csv` |
 
 ## 재현
@@ -35,4 +36,4 @@ Python 3.12 이상, `pip install -r requirements.txt`.
 
 © OpenStreetMap contributors (ODbL), GHSL GHS-POP (CC BY 4.0), 화성시 생활공간 웹포털, 화성시 공장등록 현황, 행정안전부 주민등록 인구(공공데이터포털), 통계청 KOSIS, 행정동 경계(vuski/admdongkor), 고용24(한국고용정보원), 경기버스정보(GBIS). 자세한 조건은 `DATA_LICENSES.md`.
 
-AI 도구: Claude Code(Anthropic; Claude Opus·Sonnet), Codex(OpenAI). 채용공고 분류는 두 모델이 따로 분류해 비교했고, 근거 문장을 원문과 대조했으며, Claude가 후보 852건의 원문 전체를 한 건씩 다시 읽어 확정했습니다(`jobs/prompt_review.md`, `jobs/README.md`의 검증 기록). 판정은 AI가 했고 사람이 전수 확인한 것은 아닙니다.
+AI 도구: Claude Code(Anthropic; Claude Opus·Sonnet), Codex(OpenAI). 채용공고 분류는 두 모델이 따로 분류해 비교했고, 근거 문장을 원문과 대조했으며, Claude가 후보 852건의 원문 전체를 한 건씩 다시 읽어 확정했습니다(`jobs/prompt_review.md`, `jobs/README.md`의 검증 기록). 직무 이동 기준(회사 차량으로 배송하는 공고도 빼기, 시운전은 차 운전이 아님)은 팀원 검토로 고쳤습니다. 판정은 AI가 했고 사람이 전수 확인한 것은 아닙니다.
